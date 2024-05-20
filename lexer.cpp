@@ -5,11 +5,12 @@
         - Initializes the input stream and the position.
         - Initializes the key words.
 */
+
+int Lexer::lines = 0;
 Lexer::Lexer(std::fstream& code) {
     input = ";";
     peek = ' ';
     position = 0;
-    lines = 1;
     len = input.size();
 }
 
@@ -18,7 +19,7 @@ void Lexer::readch() {
         peek = input[position];
         position++;
     } else {
-        peek = '\0';
+        peek = init::END;
     }
 }
 
@@ -31,7 +32,7 @@ bool Lexer::readch(char c) {
     return true;
 }
 
-Token Lexer::scan() {
+Token* Lexer::scan() {
     for (;; readch()) {
         if (peek == ' ' || peek == '\t') continue;
         else if (peek == '\n') lines ++;
@@ -39,23 +40,23 @@ Token Lexer::scan() {
     }
     
     if (peek == '>') {
-        if (readch('=')) return Token(tag::GE, ">=");
-        else return Token('>');
+        if (readch('=')) return new Word(init::GE, ">=");
+        else return new Token('>');
     } else if (peek == '<') {
-        if (readch('=')) return Token(tag::LE, "<=");
-        else return Token('<');
+        if (readch('=')) return new Word(init::LE, "<=");
+        else return new Token('<');
     } else if (peek == '!') {
-        if (readch('=')) return Token(tag::NE, "!=");
-        else return Token('!');
+        if (readch('=')) return new Word(init::NE, "!=");
+        else return new Token('!');
     } else if (peek == '=') {
-        if (readch('=')) return Token(tag::EQ, "==");
-        else return Token('=');
+        if (readch('=')) return new Word(init::EQ, "==");
+        else return new Token('=');
     } else if (peek == '&') {
-        if (readch('&')) return Token(tag::AND, "&&");
-        else return Token('&');
+        if (readch('&')) return new Word(init::AND, "&&");
+        else return new Token('&');
     } else if (peek == '|') {
-        if (readch('|')) return Token(tag::OR, "||");
-        else return Token('|');
+        if (readch('|')) return new Word(init::OR, "||");
+        else return new Token('|');
     } 
     if (std::isdigit(peek)) {
         int v = 0;
@@ -63,7 +64,7 @@ Token Lexer::scan() {
             v = 10 * v + (peek - '0');
             readch();
         } while (std::isdigit(peek));
-        return Token(tag::NUM, v);
+        return new Number(v);
     }
 
     if (std::isalpha(peek) || peek == '_') {
@@ -72,10 +73,13 @@ Token Lexer::scan() {
             id_name += peek;
             readch();
         } while (std::isalnum(peek) || peek == '_');
-        return Token(tag::ID, id_name);
+        if (words.find(id_name) == words.end()) {
+            words[id_name] = new Word(init::ID, id_name);
+        }
+        return words[id_name];
     }
 
-    Token Tok(peek);
+    Token* Tok = new Token(peek);
     peek = ' ';
     return Tok;
 }
