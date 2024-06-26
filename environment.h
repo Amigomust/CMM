@@ -10,17 +10,7 @@ private:
     std::unordered_map<Token*, Id*> table;
 public:
     Env* prev;
-    Env(Env* n) {
-        prev = n;
-    }
+    Env(Env* n);
     void put(Token* w, Id* i);
-    Id* get(Token* w) {
-        for (Env* e = this; e != nullptr; e = e->prev) {
-            Id* found = e->table[w];
-            if (found != nullptr) {
-                return found;
-            }
-        }
-        return nullptr;
-    }
+    Id* get(Token* w);
 };

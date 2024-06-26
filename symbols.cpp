@@ -1,15 +1,15 @@
 #include "symbols.h"
 
-
-namespace init {
-    const int AND = 256, TRUE = 257, FALSE = 258, NOT = 259, OR = 260,
-        NUM = 261, ID = 262, IF = 263, ELSE = 264, WHILE = 265,
-        BREAK = 266, CONTINUE = 267, FOR = 268, DO = 269,
-        NE = 270, EQ = 271, LE = 272, GE = 273, BASIC = 274, END = 275;
-    
-}
-
 Type* Type::Int = new Type("int", init::BASIC, 4);
+Type* Type::Bool = new Type("bool", init::BASIC, 1);
+Type* Type::Void = new Type("void", init::BASIC, 0);
+Type* Type::Float = new Type("float", init::BASIC, 4);
+Word* Word::IF = new Word(init::IF, "if");
+Word* Word::ELSE = new Word(init::ELSE, "else");
+Word* Word::WHILE = new Word(init::WHILE, "while");
+Word* Word::BREAK = new Word(init::BREAK, "break");
+Word* Word::CONTINUE = new Word(init::CONTINUE, "continue");
+Word* Word::FOR = new Word(init::FOR, "for");
 
 /*
     Constructor for a token with only a token_type.
@@ -20,7 +20,8 @@ Token::Token(int t) {
 
 
 std::string Token::to_string() {
-    return "" + char(type);
+    std::string s = "";
+    return s + char(type);
 }
 
 /*
@@ -39,6 +40,10 @@ std::string Word::to_string() {
 */
 Number::Number(int x): Token(init::NUM){
     value = x;
+}
+
+std::string Number::to_string() {
+    return std::to_string(value);
 }
 
 /*

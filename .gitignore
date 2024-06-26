@@ -1,1 +1,6 @@
 .vscode/
+*.o
+*.out
+*.exe
+csubsub
+te.c

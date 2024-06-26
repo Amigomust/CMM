@@ -6,12 +6,24 @@
         - Initializes the key words.
 */
 
-int Lexer::lines = 0;
-Lexer::Lexer(std::fstream& code) {
-    input = ";";
+int Lexer::lines = 1;
+Lexer::Lexer(std::string code) {
+    input = code;
     peek = ' ';
     position = 0;
     len = input.size();
+    words["if"] = new Word(init::IF, "if");
+    words["else"] = new Word(init::ELSE, "else");
+    words["while"] = new Word(init::WHILE, "while");
+    words["break"] = new Word(init::BREAK, "break");
+    words["continue"] = new Word(init::CONTINUE, "continue");
+    words["int"] = Type::Int;
+    words["bool"] = Type::Bool;
+    words["void"] = Type::Void;
+    words["float"] = Type::Float;
+    words["true"] = new Word(init::TRUE, "true");
+    words["false"] = new Word(init::FALSE, "false");
+    words["return"] = new Word(init::RETURN, "return");
 }
 
 void Lexer::readch() {
@@ -19,7 +31,7 @@ void Lexer::readch() {
         peek = input[position];
         position++;
     } else {
-        peek = init::END;
+        peek = EOF;
     }
 }
 
@@ -28,17 +40,19 @@ bool Lexer::readch(char c) {
     if (peek != c) {
         return false;
     }
-    peek = EOF;
+    peek = ' ';
     return true;
 }
 
 Token* Lexer::scan() {
     for (;; readch()) {
-        if (peek == ' ' || peek == '\t') continue;
-        else if (peek == '\n') lines ++;
+        if (peek == ' ' || peek == '\t' || peek == '\r') continue;
+        else if (peek == '\n') {
+            lines ++;
+            continue;
+        }
         else break;
     }
-    
     if (peek == '>') {
         if (readch('=')) return new Word(init::GE, ">=");
         else return new Token('>');
@@ -57,7 +71,10 @@ Token* Lexer::scan() {
     } else if (peek == '|') {
         if (readch('|')) return new Word(init::OR, "||");
         else return new Token('|');
-    } 
+    } else if (peek == '~') {
+        if (readch('=')) return new Word(init::NE, "~=");
+        else return new Token('~');
+    }
     if (std::isdigit(peek)) {
         int v = 0;
         do {
@@ -78,8 +95,10 @@ Token* Lexer::scan() {
         }
         return words[id_name];
     }
-
-    Token* Tok = new Token(peek);
+    Token* Tok;
+    if (peek == EOF) {
+        Tok = new Token(init::END);
+    } else Tok = new Token(peek);
     peek = ' ';
     return Tok;
 }
