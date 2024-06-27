@@ -23,15 +23,18 @@ public:
     virtual Expr* gen();
     virtual Expr* reduce();
     virtual std::string to_string();
+    virtual void jumping(int t, int f);
+    virtual void emit_jumps(std::string test, int t, int f);
 };
 
 class Id : public Expr {
-private:
+protected:
     int offset;
-    
 public:
     int ID_type;
-    Id(Token* tok, Type* p, int b);
+    Id(Token* tok, Type* p, bool set = true);
+    virtual void set_offset();
+    std::string to_string();
 };
 
 class Temp: public Id {
@@ -47,17 +50,32 @@ class Arg: public Id {
 private:
     static int num_counts;
     int num;
+    Id* function_name;
 public:
-    Arg(Type* p);
+    Arg(Token* tok, Type* p);
     std::string to_string();
+    void set_offset();
+};
+
+class SeqExpr: public Expr {
+public:
+    int number;
+    Expr* expr1;
+    SeqExpr* expr2;
+    SeqExpr(Expr* e1, SeqExpr* e2);
 };
 
 class Function: public Id {
 private:
     SeqExpr* args;
 public:
+    static Function* Enclosing;
+    int used;
     Function(Token* tok, Type* t, SeqExpr* args);
+    void emit_label();
     friend class Call;
+    std::string to_string();
+    void set_args(SeqExpr* a);
 };
 
 class Op: public Expr {
@@ -94,19 +112,27 @@ public:
     Call(Token* tok, Type* t, Function* f, SeqExpr* a);
     Expr* gen();
     Expr* reduce();
+    std::string to_string();
 };
 
 class Constant: public Expr {
 public:
+    static Constant* True;
+    static Constant* False;
     Constant(Token* tok, Type* p);
+    void jumping(int t, int f);
+    std::string to_string();
 };
 
 class Stmt : public Node {
 private:
 public:
     static Stmt* stmt_null;
+    static Stmt* Enclosing;
+    int after;
+    int begin;
     Stmt();
-    void gen(int a, int b);
+    virtual void gen(int a, int b);
 };
 
 class Set: public Stmt {
@@ -117,6 +143,15 @@ public:
     Set(Id* i, Expr* x);
     void gen(int b, int a);
     Type* check(Type* p1, Type* p2);
+};
+
+class Calculate: public Stmt {
+private:
+    Expr* expr;
+public:
+    Calculate(Expr* x);
+    void gen(int b, int a);
+    std::string to_string();
 };
 
 class Decl: public Stmt {
@@ -138,9 +173,57 @@ public:
     void gen(int a, int b);
 };
 
-class SeqExpr: public Expr {
+class If: public Stmt {
+private:
+    Expr* expr;
+    Stmt* stmt;
 public:
-    Expr* expr1;
-    SeqExpr* expr2;
-    SeqExpr(Expr* e1, SeqExpr* e2);
+    If(Expr* x, Stmt* s);
+    void gen(int a, int b);
+};
+
+class Else: public Stmt {
+private:
+    Expr* expr;
+    Stmt* stmt1;
+    Stmt* stmt2;
+public:
+    Else(Expr* x, Stmt* s1, Stmt* s2);
+    void gen(int a, int b);
+};
+
+class While: public Stmt {
+private:
+    Expr* expr;
+    Stmt* stmt;
+public: 
+    While(Expr* x, Stmt* s);
+    While();
+    void init(Expr* x, Stmt* s);
+    void gen(int a, int b);
+};
+
+class Continue: public Stmt {
+private:
+    Stmt* stmt;
+public:
+    Continue();
+    void gen(int a, int b);
+};
+
+class Break: public Stmt {
+private:
+    Stmt* stmt;
+public:
+    Break();
+    void gen(int a, int b);
+};
+
+class Return: public Stmt {
+private:
+    Function* func;
+    Expr* expr;
+public:
+    Return(Expr* x);
+    void gen(int a, int b);
 };

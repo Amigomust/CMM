@@ -5,12 +5,11 @@
 class Parser {
 private:
     Token* look;
-    Lexer lex;
+    Lexer* lex;
     Env* top;
-    int used;
 public:
     void move();
-    Parser(Lexer l);
+    Parser(Lexer* l);
     void error(std::string s);
     void match(int t);
     void program();
@@ -19,7 +18,7 @@ public:
     Stmt* block();
     Stmt* stmts();
     Stmt* stmt();
-    Stmt* assign();
+    // Stmt* assign();
     SeqExpr* decl_args();
     SeqExpr* get_expr();
     Expr* equal();
@@ -32,5 +31,6 @@ public:
     Expr* logic_ge_le();
     Expr* add_sub();
     Expr* mul_mod_div();
+    Expr* unary();
     Expr* factor();
 };

@@ -1,12 +1,12 @@
 #include "abstract_syntax_tree.h"
 
-Parser::Parser(Lexer l) {
+Parser::Parser(Lexer* l) {
     lex = l;
     move();
 }
 
 void Parser::move() {
-    look = lex.scan();
+    look = lex -> scan();
 }
 
 void Parser::match(int t) {
@@ -18,7 +18,7 @@ void Parser::match(int t) {
 }
 
 void Parser::error(std::string s) {
-    std::cout << "Error in line" << lex.lines << ": " << s << "\n";
+    std::cout << "Error in line" << lex -> lines << ": " << s << "\n";
 }
 
 void Parser::program() {
@@ -37,9 +37,13 @@ void Parser::decl_function() {
         match('(');
         Env* saved = top;
         top = new Env(saved);
+        Function* fun_id = new Function(tok, t, nullptr);
+        Function::Enclosing = fun_id;
         SeqExpr* fun_args = decl_args();
         match(')');
-        top->put(tok, new Function(tok, t, fun_args));
+        fun_id -> set_args(fun_args);
+        top->put(tok, fun_id);
+        fun_id -> used = 0;
         Stmt* s = block();
         int begin = s -> new_label(); int after = s -> new_label();
         s -> emit_label(begin); s -> gen(begin, after); s -> emit_label(after);
@@ -51,7 +55,7 @@ Stmt *Parser::decl_variable(Type* t) {
     else if (look -> type == ',') move();
     Token* name = look;
     match(init::ID);
-    Id* id = new Id(name, t, used);
+    Id* id = new Id(name, t);
     top -> put(name, id);
     Stmt* s = Stmt::stmt_null;
     if (look -> type == '=') {
@@ -68,7 +72,7 @@ SeqExpr *Parser::decl_args() {
     match(init::BASIC);
     Token* tok = look;
     match(init::ID);
-    Id* id = new Id(tok, t, used);
+    Id* id = new Arg(tok, t);
     top -> put(tok, id);
     return new SeqExpr(id, decl_args());
 }
@@ -93,40 +97,62 @@ Stmt* Parser::stmts() {
 
 Stmt* Parser::stmt() {
     if (look -> type == init::BASIC) {
+        Type* t = (Type*) look;
         move();
-        return decl_variable((Type*)look);
+        Stmt* temp = decl_variable(t);
+        match(';');
+        return temp;
     } else if (look -> type == ';') {
         move();
         return Stmt::stmt_null;
+    } else if (look -> type == init::IF) {
+        match(init::IF); match('(');
+        Expr* x = equal();
+        match(')');
+        Stmt* s1 = block();
+        if (look -> type != init::ELSE) {
+            return new If(x, s1);
+        }
+        match(init::ELSE);
+        Stmt* s2 = block();
+        return new Else(x, s1, s2);
+    } else if (look -> type == init::WHILE) {
+        match(init::WHILE); match('(');
+        Expr* x = equal();
+        match(')');
+        While* while_node = new While();
+        Stmt* temp = Stmt::Enclosing;
+        Stmt::Enclosing = while_node;
+        Stmt* s = block();
+        while_node -> init(x, s);
+        Stmt::Enclosing = temp;
+        return while_node;
+    } else if (look -> type == init::RETURN) {
+        match(init::RETURN);
+        Expr* x = (look -> type == ';' ? Expr::expr_null : equal());
+        match(';');
+        return new Return(x);
+    } else if (look -> type == init::CONTINUE) {
+        match(init::CONTINUE); match(';');
+        return new Continue();
+    } else if (look -> type == init::BREAK) {
+        match(init::BREAK); match(';');
+        return new Break();
     } else {
-        return assign();
+        Stmt* temp = new Calculate(equal());
+        match(';');
+        return temp;
     }
 }
 
-Stmt* Parser::assign() {
-    Stmt* stmt;
-    Token* t = look;
-    match(init::ID);
-    Id* id = top->get(t);
-    if (id == nullptr) {
-        error(id->to_string() + " undeclared");
-    }
-    if (look -> type == '=') {
-        move();
-        stmt = new Set(id, equal());
-        return;
-    } else {
-        equal();
-    }
-    match(';');
-    return stmt;
-}
-
+/*
+重写赋值表达式
+需要修改的地方：
+实现一个新的类，继承 Binary 类，重写 gen 方法和 reduce 方法
+*/
+ 
 Expr* Parser::equal() {
     Expr* x = logic_or();
-    if (x -> op -> type != init::ID) {
-        error("Error in equal left value");
-    }
     while (look -> type == '=') {
         Token* tok = look;
         move();
@@ -217,22 +243,47 @@ Expr* Parser::add_sub() {
 }
 
 Expr* Parser::mul_mod_div() {
-    Expr* x = factor();
+    Expr* x = unary();
     while (look -> type == '*' || look -> type == '/' || look -> type == '%') {
         Token* tok = look;
         move();
-        x = new Binary(tok, x, factor());
+        x = new Binary(tok, x, unary());
     }
+    return x;
+}
+
+Expr* Parser::unary() {
+    if (look -> type == '-') {
+        Token* tok = look;
+        move();
+        return new Unary(tok, unary());
+    } else if (look -> type == '!') {
+        Token* tok = look;
+        move();
+        return new Unary(tok, unary());
+    } else if (look -> type == '~') {
+        Token* tok = look;
+        move();
+        return new Unary(tok, unary());
+    }
+    return factor();
 }
 
 Expr* Parser::factor() {
-    Expr* x = nullptr;
+    Expr* x = Expr::expr_null;
     if (look -> type == '(') {
         move();
-        x = equal();
+        x = logic_or();
         match(')');
     } else if (look -> type == init::NUM) {
         x = new Constant(look, Type::Int);
+        move();
+    } else if (look -> type == init::TRUE) {
+        x = Constant::True;
+        move();
+    } else if (look -> type == init::FALSE) {
+        x = Constant::False;
+        move();
     } else if (look -> type == init::ID) {
         Id* id = top->get(look);
         if (id == nullptr) {
@@ -252,8 +303,8 @@ Expr* Parser::factor() {
     } else {
         error("Syntax error");
     }
+    return x;
 }
-
 
 SeqExpr *Parser::get_expr() {
     if (look -> type == ')') {

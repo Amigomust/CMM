@@ -13,7 +13,7 @@ namespace init {
     const int AND = 256, TRUE = 257, FALSE = 258, NOT = 259, OR = 260,
         NUM = 261, ID = 262, IF = 263, ELSE = 264, WHILE = 265,
         BREAK = 266, CONTINUE = 267, FOR = 268, DO = 269,
-        NE = 270, EQ = 271, LE = 272, GE = 273, BASIC = 274, RETURN = 275, END = 276;
+        NE = 270, EQ = 271, LE = 272, GE = 273, BASIC = 274, RETURN = 275, END = 277;
 }
 // A token is a single unit of input. It is a pair of a type and a value.
 class Token {
@@ -40,7 +40,7 @@ public:
     // Constructor for a token with only a token_type.
     Word(int t, std::string s);
     std::string to_string();
-    static Word* IF, *ELSE, *WHILE, *BREAK, *CONTINUE, *FOR;
+    static Word* IF, *ELSE, *WHILE, *BREAK, *CONTINUE, *FOR, *TEMP, *NOTHING;
 };
 
 class Number : public Token {
