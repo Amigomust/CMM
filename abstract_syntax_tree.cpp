@@ -2,6 +2,7 @@
 
 Parser::Parser(Lexer* l) {
     lex = l;
+    top = new Env(nullptr);
     move();
 }
 
@@ -20,8 +21,16 @@ void Parser::match(int t) {
 void Parser::error(std::string s) {
     std::cout << "Error in line" << lex -> lines << ": " << s << "\n";
 }
+void Parser::init() {
+    
+    Function::PrintInt = new Function(Word::PRINT_INT, Type::Void, nullptr);
+    Function::Enclosing = Function::PrintInt;
+    Function::PrintInt -> set_args(new SeqExpr(new Arg(Word::TEMP, Type::Int), nullptr));
+    top -> put(Word::PRINT_INT, Function::PrintInt);
+}
 
 void Parser::program() {
+    init();
     if (look->type == init::END) {
         return;
     }
@@ -35,18 +44,25 @@ void Parser::decl_function() {
         Token* tok = look;
         match(init::ID);
         match('(');
-        Env* saved = top;
-        top = new Env(saved);
         Function* fun_id = new Function(tok, t, nullptr);
         Function::Enclosing = fun_id;
+        top->put(tok, fun_id);
+        Env* saved = top;
+        top = new Env(saved);
         SeqExpr* fun_args = decl_args();
         match(')');
         fun_id -> set_args(fun_args);
-        top->put(tok, fun_id);
         fun_id -> used = 0;
+        fun_id -> emit_label();
         Stmt* s = block();
         int begin = s -> new_label(); int after = s -> new_label();
         s -> emit_label(begin); s -> gen(begin, after); s -> emit_label(after);
+        int next = s -> new_label();
+        Stmt* normal_return = new Return();
+        normal_return -> gen(after, next);
+        normal_return -> emit_label(next);
+        delete top;
+        top = saved;
     }
 }
 
@@ -83,6 +99,7 @@ Stmt* Parser::block() {
     top = new Env(saved);
     Stmt* s = stmts();
     match('}');
+    delete top;
     top = saved;
     return s;
 }

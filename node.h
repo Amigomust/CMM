@@ -1,4 +1,5 @@
 #pragma once
+#include "register.h"
 #include "lexer.h"
 
 class Node {
@@ -20,11 +21,13 @@ public:
     Token* op;
     Type* type;
     Expr(Token* tok, Type* p);
-    virtual Expr* gen();
+    virtual Expr* gen(const char* from = "");
     virtual Expr* reduce();
     virtual std::string to_string();
     virtual void jumping(int t, int f);
-    virtual void emit_jumps(std::string test, int t, int f);
+    virtual void emit_jumps(Expr* test, int t, int f);
+    virtual void load_register(Register* r, const std::string from = "");
+    
 };
 
 class Id : public Expr {
@@ -35,6 +38,10 @@ public:
     Id(Token* tok, Type* p, bool set = true);
     virtual void set_offset();
     std::string to_string();
+    virtual std::string location();
+    virtual std::string location_sp();
+    void load_register(Register* r, const std::string from ="");
+    virtual void store_register(Register* r, const std::string from = "");
 };
 
 class Temp: public Id {
@@ -53,6 +60,7 @@ private:
     Id* function_name;
 public:
     Arg(Token* tok, Type* p);
+    Arg(Arg* a);
     std::string to_string();
     void set_offset();
 };
@@ -70,7 +78,9 @@ private:
     SeqExpr* args;
 public:
     static Function* Enclosing;
+    static Function* PrintInt;
     int used;
+    int totsz;
     Function(Token* tok, Type* t, SeqExpr* args);
     void emit_label();
     friend class Call;
@@ -89,8 +99,9 @@ private:
     Expr* expr;
 public:
     Unary(Token* tok, Expr* expr);
-    Expr* gen();
+    Expr* gen(const char* from = "");
     std::string to_string();
+    void load_register(Register* r, const std::string from = "");
 };
 
 class Binary: public Op {
@@ -99,8 +110,9 @@ private:
     Expr* expr2;
 public:
     Binary(Token* tok, Expr* expr1, Expr* expr2);
-    Expr* gen();
+    Expr* gen(const char* from = "");
     std::string to_string();
+    void load_register(Register* r, const std::string from = "");
 };
 
 class Call: public Expr {
@@ -110,9 +122,10 @@ private:
     SeqExpr* fun_args;
 public:
     Call(Token* tok, Type* t, Function* f, SeqExpr* a);
-    Expr* gen();
+    Expr* gen(const char* from = "");
     Expr* reduce();
     std::string to_string();
+    void load_register(Register* r, const std::string from = "");
 };
 
 class Constant: public Expr {
@@ -122,6 +135,7 @@ public:
     Constant(Token* tok, Type* p);
     void jumping(int t, int f);
     std::string to_string();
+    void load_register(Register* r, const std::string from = "");
 };
 
 class Stmt : public Node {
@@ -180,6 +194,7 @@ private:
 public:
     If(Expr* x, Stmt* s);
     void gen(int a, int b);
+    std::string to_string();
 };
 
 class Else: public Stmt {
@@ -225,5 +240,6 @@ private:
     Expr* expr;
 public:
     Return(Expr* x);
+    Return();
     void gen(int a, int b);
 };

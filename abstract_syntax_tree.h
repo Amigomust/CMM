@@ -8,6 +8,7 @@ private:
     Lexer* lex;
     Env* top;
 public:
+    void init();
     void move();
     Parser(Lexer* l);
     void error(std::string s);

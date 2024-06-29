@@ -1,5 +1,6 @@
 #include "environment.h"
 
+int Env::num = 0;
 Id* Env::get(Token* w) {
     for (Env* e = this; e != nullptr; e = e->prev) {
         Id* found = e->table[w];
@@ -15,5 +16,10 @@ void Env::put(Token* w, Id* i) {
 }
 
 Env::Env(Env* n) {
+    num ++;
     prev = n;
+}
+
+Env::~Env() {
+    num --;
 }

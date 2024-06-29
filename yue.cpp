@@ -2,6 +2,7 @@
 #include <assert.h>
 #include "lexer.h"
 #include "abstract_syntax_tree.h"
+#include "assemble.h"
 int main(int argc, char const *argv[]) {
     assert(argc > 1);
     std::fstream fs;
@@ -10,6 +11,7 @@ int main(int argc, char const *argv[]) {
     std::string code(std::istreambuf_iterator<char>(fs), {});
     Lexer lexer = Lexer(code);
     Parser parser = Parser(&lexer);
+    cmd_init();
     parser.program();
     // while (true) {
     //     Token* token = lexer.scan();

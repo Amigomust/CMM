@@ -40,7 +40,7 @@ public:
     // Constructor for a token with only a token_type.
     Word(int t, std::string s);
     std::string to_string();
-    static Word* IF, *ELSE, *WHILE, *BREAK, *CONTINUE, *FOR, *TEMP, *NOTHING;
+    static Word* IF, *ELSE, *WHILE, *BREAK, *CONTINUE, *FOR, *TEMP, *NOTHING, *PRINT_INT;
 };
 
 class Number : public Token {

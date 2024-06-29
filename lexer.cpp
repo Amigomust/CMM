@@ -24,6 +24,7 @@ Lexer::Lexer(std::string code) {
     words["true"] = new Word(init::TRUE, "true");
     words["false"] = new Word(init::FALSE, "false");
     words["return"] = new Word(init::RETURN, "return");
+    words["println_int"] = Word::PRINT_INT;
 }
 
 void Lexer::readch() {

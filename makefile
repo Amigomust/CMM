@@ -5,10 +5,12 @@
 CXXFLAGS = -std=c++17 -Wall -DLOCAL
 # 存储$(wildcard obj/*.o)的变量
 
-all: lexer node parser cmm  
+all: mips lexer node parser cmm  
 
 #=============================================================================
 # Special targets provided by cmake.
+mips: register.cpp register.h utils.h
+	$(CXX) $(CXXFLAGS) -c register.cpp
 
 lexer: lexer.h lexer.cpp symbols.h symbols.cpp
 	$(CXX) $(CXXFLAGS) -c lexer.cpp symbols.cpp
@@ -18,6 +20,6 @@ node: node.h node.cpp environment.h environment.cpp
 
 parser: abstract_syntax_tree.h abstract_syntax_tree.cpp
 	$(CXX) $(CXXFLAGS) -c abstract_syntax_tree.cpp
-
+ 
 cmm: abstract_syntax_tree.o yue.cpp node.o lexer.o symbols.o environment.o
-	$(CXX) $(CXXFLAGS) -o csubsub symbols.o lexer.o node.o environment.o abstract_syntax_tree.o yue.cpp   
+	$(CXX) $(CXXFLAGS) -o csubsub register.o symbols.o lexer.o node.o environment.o abstract_syntax_tree.o yue.cpp   

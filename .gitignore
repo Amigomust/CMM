@@ -3,4 +3,11 @@
 *.out
 *.exe
 csubsub
+Compilerlab4
 te.c
+.llvm-project/
+answers/
+cases/
+output/
+build/
+yue.txt

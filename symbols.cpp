@@ -12,6 +12,7 @@ Word* Word::CONTINUE = new Word(init::CONTINUE, "continue");
 Word* Word::FOR = new Word(init::FOR, "for");
 Word* Word::TEMP = new Word(init::ID, "__temp__");
 Word* Word::NOTHING = new Word(init::ID, "__nothing__");
+Word* Word::PRINT_INT = new Word(init::ID, "println_int");
 
 /*
     Constructor for a token with only a token_type.
